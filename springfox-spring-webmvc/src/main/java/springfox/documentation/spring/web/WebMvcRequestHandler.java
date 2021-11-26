@@ -23,8 +23,6 @@ import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.method.HandlerMethod;
-import org.springframework.web.servlet.mvc.condition.PathPatternsRequestCondition;
-import org.springframework.web.servlet.mvc.condition.RequestCondition;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import springfox.documentation.RequestHandler;
 import springfox.documentation.RequestHandlerKey;
@@ -80,32 +78,9 @@ public class WebMvcRequestHandler implements RequestHandler {
 
   @Override
   public PatternsRequestCondition getPatternsCondition() {
-    org.springframework.web.servlet.mvc.condition.PatternsRequestCondition requestCondition = getPatternsRequestCondition();
     return new WebMvcPatternsRequestConditionWrapper(
         contextPath,
-        requestCondition);
-  }
-
-  private org.springframework.web.servlet.mvc.condition.PatternsRequestCondition getPatternsRequestCondition() {
-    org.springframework.web.servlet.mvc.condition.PatternsRequestCondition requestCondition;
-    // 不能用instanceof，只能用isInstance()和cast()了
-    Class<PathPatternsRequestCondition> pathPatternsClass = PathPatternsRequestCondition.class;
-    Class<org.springframework.web.servlet.mvc.condition.PatternsRequestCondition> patternsClass =
-            org.springframework.web.servlet.mvc.condition.PatternsRequestCondition.class;
-    // 获取pathPatternsCondition
-    RequestCondition<Object> activePatternsCondition = requestMapping.getActivePatternsCondition();
-
-    if (pathPatternsClass.isInstance(activePatternsCondition)) {
-      // 当类型是pathPatternsRequestCondition时，新建一个patternsRequestCondition
-      requestCondition = new org.springframework.web.servlet.mvc.condition.PatternsRequestCondition(
-              pathPatternsClass.cast(activePatternsCondition).getDirectPaths().toArray(new String[0])
-      );
-    } else if (patternsClass.isInstance(activePatternsCondition)) {
-      requestCondition = patternsClass.cast(activePatternsCondition);
-    } else {
-      throw new IllegalStateException("系统错误，请联系相关人员排查");
-    }
-    return requestCondition;
+        requestMapping.getPatternsCondition());
   }
 
   @Override
@@ -151,7 +126,7 @@ public class WebMvcRequestHandler implements RequestHandler {
   @Override
   public RequestHandlerKey key() {
     return new RequestHandlerKey(
-        getPatternsRequestCondition().getDirectPaths(),
+        requestMapping.getPatternsCondition().getPatterns(),
         requestMapping.getMethodsCondition().getMethods(),
         requestMapping.getConsumesCondition().getConsumableMediaTypes(),
         requestMapping.getProducesCondition().getProducibleMediaTypes());
